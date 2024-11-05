@@ -5,5 +5,8 @@ edition = "2021"
 description = "A Rust application for parsing film information from a string into a structured Film struct."
 
 [dependencies]
+anyhow = "1.0.92"
+clippy = "0.0.302"
+fmt = "0.1.0"
 pest = "2.7.14"
 pest_derive = "2.7.14"
