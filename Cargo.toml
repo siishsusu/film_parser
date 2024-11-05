@@ -1,0 +1,9 @@
+[package]
+name = "film_parser"
+version = "0.1.0"
+edition = "2021"
+description = "A Rust application for parsing film information from a string into a structured Film struct."
+
+[dependencies]
+pest = "2.7.14"
+pest_derive = "2.7.14"
