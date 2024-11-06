@@ -1,26 +1,60 @@
+//! # Film Grammar
+//! This grammar defines the structure of a film entry, parsing information like title, year, director, writer, genre, stars, and description.
 file = { film* }
 
+/// Represents a single film record containing data such as title, year, director, writer, genre, actors, and description.
+/// The format is `Title: <title>; Year: <year>; Director: <director>; Screenwriter: <screenwriter>; Genre: [<genre1>, <genre2>, ...]; Stars: [<star1>, <star2>, ...]; Description: <description>;``.
 film = { Title ~ ";" ~ (" ")* ~ Year ~ ";" ~ (" ")* ~ Director ~ ";" ~ (" ")* ~ Writer ~ ";" ~ (" ")* ~ Genre ~ ";" ~ (" ")* ~ Stars ~ ";" ~ (" ")* ~ Description ~ (";")* }
 
+/// Matches the title field of the film record.
+/// Format: `Title: <title>`
+/// Example: `Title: Longlegs`
 Title = { "Title: " ~ title_value }
+/// Extracts the actual title value, allowing any character except `;`.
 title_value = { (!";" ~ ANY)* }
 
+/// Matching the year of the film's release.
+/// Format: `Year: <year>'
+/// Example: `Year: 2010`
 Year = { "Year: " ~ year_value }
+/// Parses the year as a series of ASCII digits, usually representing a four-digit year.
 year_value = { ASCII_DIGIT+ }
 
+/// Matching the name of the film's director.
+/// Format: `Director: <director>'
+/// Example: `Director: Yorgos Lanthimos`
 Director = { "Director: " ~ director_value }
+/// Extracts the actual director name, allowing any character except `;`.
 director_value = { (!";" ~ ANY)* }
 
+/// Extracts the name of the film's screenwriter.
+/// Format: `Writer: <writer>`.
+/// Example: `Writer: Ally Pankiw`
 Writer = { "Writer: " ~ writer_value }
+/// Extracts the actual writer name, allowing any character except `;`.
 writer_value = { (!";" ~ ANY)* }
 
+/// Matches the genre of the film, which is provided as a list in square brackets.
+/// Format: `Genre: [<genre1>, <genre2>, ...]`.
+/// Example: `Genre: [Action, Science Fiction]`.
 Genre = { "Genre: " ~ "[" ~ genre_list ~ "]" }
+/// Parses a list of genres, each separated by a comma and an optional space.
 genre_list = { genre_item ~ ("," ~ (" ")* ~ genre_item)* }
+/// Matches one genre item in the genre list.
 genre_item = { (!("," | "]") ~ ANY)* }
 
+/// Matches the stars or main cast of the film, which is provided as a list in square brackets.
+/// Format: `Stars: [<star1>, <star2>, ...]`
+/// Example: `Stars: [Leonardo DiCaprio, Joseph Gordon-Levitt]`
 Stars = { "Stars: " ~ "[" ~ stars_list ~ "]" }
+/// Parses a list of stars, each separated by a comma and optional space.
 stars_list = { star_item ~ ("," ~ (" ")* ~ star_item)* }
+/// Matches a single star or actor's name in the stars list.
 star_item = { (!("," | "]") ~ ANY)* }
 
+/// Matches the description of the film, providing additional context or plot summary.
+/// Format: `Description: <description>`
+/// Example: `Description: This tense, touching and funny portrait of family dynamics follows three estranged sisters as they converge in a New York apartment to care for their ailing father and try to mend their own broken relationship with one another.`
 Description = { "Description: " ~ description_value }
+/// Extracts the actual description value, allowing any character except `;`.
 description_value = { (!";" ~ ANY)* }
