@@ -35,3 +35,48 @@ struct Film {
 
 ## Usage
 Once parsed, the resulting Film struct can be used for various purposes, including displaying film details, storing them in a database, or further processing them in an application.
+
+## Film Grammar
+The grammar for parsing the film data is structured as follows:
+```rust
+file = { film* }
+
+film = { Title ~ ";" ~ (" ")* ~ Year ~ ";" ~ (" ")* ~ Director ~ ";" ~ (" ")* ~ Writer ~ ";" ~ (" ")* ~ Genre ~ ";" ~ (" ")* ~ Stars ~ ";" ~ (" ")* ~ Description ~ (";")* }
+
+Title = { "Title: " ~ title_value }
+title_value = { (!";" ~ ANY)* }
+
+Year = { "Year: " ~ year_value }
+year_value = { ASCII_DIGIT+ }
+
+Director = { "Director: " ~ director_value }
+director_value = { (!";" ~ ANY)* }
+
+Writer = { "Writer: " ~ writer_value }
+writer_value = { (!";" ~ ANY)* }
+
+Genre = { "Genre: " ~ "[" ~ genre_list ~ "]" }
+genre_list = { genre_item ~ ("," ~ (" ")* ~ genre_item)* }
+genre_item = { (!("," | "]") ~ ANY)* }
+
+Stars = { "Stars: " ~ "[" ~ stars_list ~ "]" }
+stars_list = { star_item ~ ("," ~ (" ")* ~ star_item)* }
+star_item = { (!("," | "]") ~ ANY)* }
+
+Description = { "Description: " ~ description_value }
+description_value = { (!";" ~ ANY)* }
+```
+
+```text
+                                                            +------------------+
+                                                            |    Film Entry    |
+                                                            +------------------+
+                                                                     |
+    +--------------------------------------------------------------------------------------------------------------------------------------+
+    |      Title      |      Year      |      Director      |      Writer      |      Genre      |      Stars      |      Description      |
+    +--------------------------------------------------------------------------------------------------------------------------------------+
+            |                 |                  |                   |                  |                 |                    |
+    +------------+     +------------+     +-------------+      +-----------+      +-----------+   +---------------+     +---------------+
+    | Title: ... |     | Year: ...  |     |Director: ...|      |Writer: ...|      |Genre:[...]|   | Stars: [...]  |     |Description:...|
+    +------------+     +------------+     +-------------+      +-----------+      +-----------+   +---------------+     +---------------+
+```
