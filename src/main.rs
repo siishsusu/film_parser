@@ -1,12 +1,12 @@
 use film_parser::*;
 use colored::*;
 
-fn main() {
+fn main() -> anyhow::Result<()> {
     let args: Vec<String> = std::env::args().collect();
 
     if args.len() < 2 {
         eprintln!("{}{}", "Error".red().bold(), ": No command provided. Use 'cargo run -- help' for usage information.");
-        return;
+        return Ok(());
     }
 
     match args[1].as_str(){
@@ -19,7 +19,7 @@ fn main() {
         "parse" => {
             if args.len() <= 2 {
                 eprintln!("{}{}", "Error".red().bold(), ": No file path provided. You must specify path to the file with information.");
-                return;
+                return Ok(());
             }
             let filepath = &args[2];
             match read_lines(filepath) {
@@ -28,9 +28,8 @@ fn main() {
                     println!("{:?}", lines.get(0));
                 }
                 Err(e) => eprintln!(
-                    "{}{} '{}': {}",
-                    "Error".red().bold(),
-                    " reading file ",
+                    "{}'{}': {}",
+                    "Error reading file ".red().bold(),
                     filepath,
                     e
                 ),
@@ -38,6 +37,7 @@ fn main() {
         }
         _ => eprintln!("{}{}", "Error".red().bold(), ": Invalid command. Use 'cargo run -- help' for usage information."),
     }
+    Ok(())
 }
 
 
