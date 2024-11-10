@@ -38,7 +38,7 @@ Once parsed, the resulting Film struct can be used for various purposes, includi
 
 ## Film Grammar
 The grammar for parsing the film data is structured as follows:
-```rust
+```text
 file = { film* }
 
 film = { Title ~ ";" ~ (" ")* ~ Year ~ ";" ~ (" ")* ~ Director ~ ";" ~ (" ")* ~ Writer ~ ";" ~ (" ")* ~ Genre ~ ";" ~ (" ")* ~ Stars ~ ";" ~ (" ")* ~ Description ~ (";")* }
