@@ -3,7 +3,6 @@ use film_parser::*;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use pest::RuleType;
 
     fn parse_single_film(input: &str) -> anyhow::Result<Film> {
         let films = parse_films(vec![input.to_string()])?;
