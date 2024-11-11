@@ -16,7 +16,7 @@ pub fn read_lines(filename: &str) -> anyhow::Result<Vec<String>> {
     let file = File::open(filename)
         .with_context(|| format!("Failed to open the file {}", filename))?;
     let reader = BufReader::new(file);
-    let lines: Result<Vec<String>, std::io::Error> = reader.lines().collect();
+    let lines: Result<Vec<String>, io::Error> = reader.lines().collect();
     lines.map_err(|e| anyhow!("Failed to read the file: {}: {}", filename, e))
 }
 
@@ -36,7 +36,13 @@ pub struct Film {
 }
 
 impl Film {
-    pub fn new(title: String, year: u32, director: String, writer: String, genre: Vec<String>, stars: Vec<String>, description: String) -> Self {
+    pub fn new(title: String,
+               year: u32,
+               director: String,
+               writer: String,
+               genre: Vec<String>,
+               stars: Vec<String>,
+               description: String) -> Self {
         Film {
             title,
             year,
@@ -46,6 +52,26 @@ impl Film {
             stars,
             description,
         }
+    }
+
+    fn parse_string_field(inner_pair: pest::iterators::Pair<Rule>, target_rule: Rule) -> String {
+        inner_pair.into_inner()
+            .find_map(|pair| if pair.as_rule() == target_rule { Some(pair.as_str().to_string()) } else { None })
+            .unwrap_or_default()
+    }
+
+    fn parse_vector_field(inner_pair: pest::iterators::Pair<Rule>, list_rule: Rule) -> Vec<String> {
+        inner_pair.into_inner()
+            .find_map(|pair| if pair.as_rule() == list_rule {
+                Some(pair.into_inner()
+                    .flat_map(|item| item.as_str().trim_matches('"').split(',')
+                        .map(|s| s.trim().to_string())
+                        .collect::<Vec<String>>())
+                    .collect::<Vec<String>>())
+            } else {
+                None
+            })
+            .unwrap_or_default()
     }
 
     fn parse_to_struct(pair: pest::iterators::Pair<Rule>) -> Option<Self> {
@@ -63,89 +89,30 @@ impl Film {
                     for inner_pair_1 in inner_pair.into_inner() {
                         match inner_pair_1.as_rule() {
                             Rule::Title => {
-                                title = inner_pair_1.into_inner()
-                                    .find_map(|inner_inner_pair| {
-                                        if let Rule::title_value = inner_inner_pair.as_rule() {
-                                            Some(inner_inner_pair.as_str().to_string())
-                                        } else {
-                                            None
-                                        }
-                                    })
-                                    .unwrap_or_else(String::new);
+                                title = Self::parse_string_field(inner_pair_1, Rule::title_value)
                             }
                             Rule::Year => {
-                                let year_str = inner_pair_1.into_inner().as_str();
-                                match year_str.parse::<u32>() {
-                                    Ok(parsed_year) => {
-                                        year = parsed_year;
-                                    }
-                                    Err(_) => {
-                                        eprintln!("Failed to parse year: {}", year_str);
-                                        year = 0;
-                                    }
+                                if let Ok(parsed_year) = inner_pair_1.clone().into_inner().as_str().parse::<u32>() {
+                                    year = parsed_year;
+                                } else {
+                                    eprintln!("Failed to parse year: {}", inner_pair_1.as_str());
                                 }
                             }
                             Rule::Director => {
-                                director = inner_pair_1.into_inner()
-                                    .find_map(|inner_inner_pair| {
-                                        if let Rule::director_value = inner_inner_pair.as_rule() {
-                                            Some(inner_inner_pair.as_str().to_string())
-                                        } else {
-                                            None
-                                        }
-                                    })
-                                    .unwrap_or_else(String::new);
+                                director = Self::parse_string_field(inner_pair_1, Rule::director_value)
                             }
                             Rule::Writer => {
-                                writer = inner_pair_1.into_inner()
-                                    .find_map(|inner_inner_pair| {
-                                        if let Rule::writer_value = inner_inner_pair.as_rule() {
-                                            Some(inner_inner_pair.as_str().to_string())
-                                        } else {
-                                            None
-                                        }
-                                    })
-                                    .unwrap_or_else(String::new);
+                                writer = Self::parse_string_field(inner_pair_1, Rule::writer_value)
                             }
                             Rule::Genre => {
-                                genre = inner_pair_1.into_inner()
-                                    .find_map(|inner_inner_pair| {
-                                        if let Rule::genre_list = inner_inner_pair.as_rule() {
-                                            Some(inner_inner_pair.into_inner()
-                                                .map(|g| g.as_str().trim_matches('"').to_string())
-                                                .flat_map(|g| g.split(',').map(|s| s.trim().to_string()).collect::<Vec<String>>())
-                                                .collect::<Vec<String>>())
-                                        } else {
-                                            None
-                                        }
-                                    })
-                                    .unwrap_or_else(Vec::new);
+                                genre = Self::parse_vector_field(inner_pair_1, Rule::genre_list)
                             },
 
                             Rule::Stars => {
-                                stars = inner_pair_1.into_inner()
-                                    .find_map(|inner_inner_pair| {
-                                        if let Rule::stars_list = inner_inner_pair.as_rule() {
-                                            Some(inner_inner_pair.into_inner()
-                                                .map(|star| star.as_str().trim_matches('"').to_string())
-                                                .flat_map(|star| star.split(',').map(|s| s.trim().to_string()).collect::<Vec<String>>())
-                                                .collect::<Vec<String>>())
-                                        } else {
-                                            None
-                                        }
-                                    })
-                                    .unwrap_or_else(Vec::new);
+                                stars = Self::parse_vector_field(inner_pair_1, Rule::stars_list)
                             }
                             Rule::Description => {
-                                description = inner_pair_1.into_inner()
-                                    .find_map(|inner_inner_pair| {
-                                        if let Rule::description_value = inner_inner_pair.as_rule() {
-                                            Some(inner_inner_pair.as_str().to_string())
-                                        } else {
-                                            None
-                                        }
-                                    })
-                                    .unwrap_or_else(String::new);
+                                description = Self::parse_string_field(inner_pair_1, Rule::description_value)
                             }
                             _ => {
                                 println!("Unknown rule inside film: {:?}", inner_pair_1.as_rule());
