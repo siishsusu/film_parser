@@ -26,13 +26,13 @@ pub struct FilmParser;
 
 #[derive(Debug, Clone)]
 pub struct Film {
-    title: String,
-    year: u32,
-    director: String,
-    writer: String,
-    genre: Vec<String>,
-    stars: Vec<String>,
-    description: String,
+    pub title: String,
+    pub year: u32,
+    pub director: String,
+    pub writer: String,
+    pub genre: Vec<String>,
+    pub stars: Vec<String>,
+    pub description: String,
 }
 
 impl Film {
@@ -74,7 +74,11 @@ impl Film {
             .unwrap_or_default()
     }
 
-    fn parse_to_struct(pair: pest::iterators::Pair<Rule>) -> Option<Self> {
+    pub fn parse_to_struct(pair: pest::iterators::Pair<Rule>) -> anyhow::Result<Self> {
+        if pair.as_str().trim().is_empty() {
+            return Err(anyhow!("Unexpected empty input provided"));
+        }
+
         let mut title = String::new();
         let mut year = 0;
         let mut director = String::new();
@@ -126,7 +130,12 @@ impl Film {
             }
         }
 
-        Some(Self::new(
+        if title.is_empty() || year == 0 || director.is_empty() || writer.is_empty() ||
+            genre.is_empty() || stars.is_empty() || description.is_empty() {
+            return Err(anyhow!("Some fields may be missing"));
+        }
+
+        Ok(Self::new(
             title,
             year,
             director,
@@ -152,10 +161,9 @@ pub fn parse_films(films: Vec<String>) -> anyhow::Result<Vec<Film>> {
         };
 
         for pair in pairs {
-            if let Some(film) = Film::parse_to_struct(pair) {
-                films_res.push(film);
-            } else {
-                eprintln!("Failed to parse film: {}", film);
+            match Film::parse_to_struct(pair) {
+                Ok(parsed_film) => films_res.push(parsed_film),
+                Err(err) => eprintln!("Error parsing film: {} - {}", film, err),
             }
         }
     }

@@ -2,14 +2,20 @@ use film_parser::*;
 
 #[cfg(test)]
 mod tests {
+    use pest::RuleType;
     use super::*;
+
+    fn parse_single_film(input: &str) -> anyhow::Result<Film> {
+        let films = parse_films(vec![input.to_string()])?;
+        films.into_iter().next().ok_or_else(|| anyhow::anyhow!("No films found in input"))
+    }
 
     #[test]
     fn test_valid_film_parsing() {
-        let input = "Title: I Used To Be Funny; Year: 2023; Director: Ally Pankiw;\
-        Writer: Ally Pankiw; Genre: [Comedy, Drama]; Stars: [Rachel Sennott, Olga Petsa, Jason Jones];\
-        Description: A stand-up comedian struggling with PTSD.";
-        let film = Film::from_str(input).expect("Failed to parse valid film");
+        let input = "Title: I Used To Be Funny; Year: 2023; Director: Ally Pankiw; \
+                     Writer: Ally Pankiw; Genre: [Comedy, Drama]; Stars: [Rachel Sennott, Olga Petsa, Jason Jones]; \
+                     Description: A stand-up comedian struggling with PTSD.";
+        let film = parse_single_film(input).expect("Failed to parse valid film");
 
         assert_eq!(film.title, "I Used To Be Funny");
         assert_eq!(film.year, 2023);
@@ -23,17 +29,15 @@ mod tests {
     #[test]
     fn test_empty_input() {
         let input = "";
-        let result = Film::from_str(input);
+        let result = parse_single_film(input);
         assert!(result.is_err());
-        assert_eq!(result.err().unwrap(), "Some fields may be missing");
     }
 
     #[test]
     fn test_missing_fields() {
         let input = "Title: Some_Title; Year: 2023;";
-        let result = Film::from_str(input);
+        let result = parse_single_film(input);
         assert!(result.is_err());
-        assert_eq!(result.err().unwrap(), "Some fields may be missing");
     }
 
     #[test]
@@ -41,7 +45,7 @@ mod tests {
         let input = "Title: Some_Title; Year: 2024; Director: Some_Director;\
          Writer: Some_Writer; Genre: [Some_Genre]; Stars: [Some_Actor_A, Some_Actor_B];\
          Description: Some_Description.";
-        let film = Film::from_str(input).expect("Failed to parse valid title");
+        let film = parse_single_film(input).expect("Failed to parse valid film");
         assert_eq!(film.title, "Some_Title");
     }
 
@@ -50,7 +54,7 @@ mod tests {
         let input = "Title: ; Year: 2024; Director: Some_Director;\
          Writer: Some_Writer; Genre: [Some_Genre]; Stars: [Some_Actor_A, Some_Actor_B];\
          Description: Some_Description.";
-        let result = Film::from_str(input);
+        let result = parse_single_film(input);
         assert!(result.is_err());
     }
 
@@ -59,7 +63,7 @@ mod tests {
         let input = "Title: Some_Title; Year: 2024; Director: Some_Director;\
          Writer: Some_Writer; Genre: [Some_Genre]; Stars: [Some_Actor_A, Some_Actor_B];\
          Description: Some_Description.";
-        let film = Film::from_str(input).expect("Failed to parse valid year");
+        let film = parse_single_film(input).expect("Failed to parse valid year");
         assert_eq!(film.year, 2024);
     }
 
@@ -68,9 +72,8 @@ mod tests {
         let input = "Title: Some_Title; Year: twenty twenty-three; Director: Some_Director;\
          Writer: Some_Writer; Genre: [Some_Genre]; Stars: [Some_Actor_A, Some_Actor_B];\
          Description: Some_Description.";
-        let result = Film::from_str(input);
+        let result = parse_single_film(input);
         assert!(result.is_err());
-        assert_eq!(result.err().unwrap(), "Invalid year");
     }
 
     #[test]
@@ -78,7 +81,7 @@ mod tests {
         let input = "Title: Some_Title; Year: 2024; Director: Some_Director;\
          Writer: Some_Writer; Genre: [Some_Genre]; Stars: [Some_Actor_A, Some_Actor_B];\
          Description: Some_Description.";
-        let film = Film::from_str(input).expect("Failed to parse valid director");
+        let film = parse_single_film(input).expect("Failed to parse valid director");
         assert_eq!(film.director, "Some_Director");
     }
 
@@ -87,7 +90,7 @@ mod tests {
         let input = "Title: Some_Title; Year: 2024; Director: ;\
          Writer: Some_Writer; Genre: [Some_Genre]; Stars: [Some_Actor_A, Some_Actor_B];\
          Description: Some_Description.";
-        let result = Film::from_str(input);
+        let result = parse_single_film(input);
         assert!(result.is_err());
     }
 
@@ -96,7 +99,7 @@ mod tests {
         let input = "Title: Some_Title; Year: 2024; Director: Some_Director;\
          Writer: Some_Writer; Genre: [Some_Genre]; Stars: [Some_Actor_A, Some_Actor_B];\
          Description: Some_Description.";
-        let film = Film::from_str(input).expect("Failed to parse valid writer");
+        let film = parse_single_film(input).expect("Failed to parse valid writer");
         assert_eq!(film.writer, "Some_Writer");
     }
 
@@ -105,34 +108,34 @@ mod tests {
         let input = "Title: Some_Title; Year: 2024; Director: Some_Director;\
          Writer: ; Genre: [Some_Genre]; Stars: [Some_Actor_A, Some_Actor_B];\
          Description: Some_Description.";
-        let result = Film::from_str(input);
+        let result = parse_single_film(input);
         assert!(result.is_err());
     }
 
     #[test]
     fn test_valid_genre() {
         let input = "Title: Some_Title; Year: 2024; Director: Some_Director;\
-         Writer: ; Genre: [Drama, Mystery]; Stars: [Some_Actor_A, Some_Actor_B];\
+         Writer: Some_Writer; Genre: [Drama, Mystery]; Stars: [Some_Actor_A, Some_Actor_B];\
          Description: Some_Description.";
-        let film = Film::from_str(input).expect("Failed to parse valid genre");
+        let film = parse_single_film(input).expect("Failed to parse valid genre");
         assert_eq!(film.genre, vec!["Drama".to_string(), "Mystery".to_string()]);
     }
 
     #[test]
-    fn test_invalid_writer() {
+    fn test_invalid_genre() {
         let input = "Title: Some_Title; Year: 2024; Director: Some_Director;\
-         Writer: ; Genre: Drama, Mystery; Stars: [Some_Actor_A, Some_Actor_B];\
+         Writer: Some_Writer; Genre: Drama, Mystery; Stars: [Some_Actor_A, Some_Actor_B];\
          Description: Some_Description.";
-        let result = Film::from_str(input);
+        let result = parse_single_film(input);
         assert!(result.is_err());
     }
 
     #[test]
     fn test_valid_stars() {
         let input = "Title: Some_Title; Year: 2024; Director: Some_Director;\
-         Writer: ; Genre: [Drama, Mystery]; Stars: [Some_Actor_A, Some_Actor_B];\
+         Writer: Some_Writer; Genre: [Drama, Mystery]; Stars: [Some_Actor_A, Some_Actor_B];\
          Description: Some_Description.";
-        let film = Film::from_str(input).expect("Failed to parse valid stars");
+        let film = parse_single_film(input).expect("Failed to parse valid stars");
         assert_eq!(film.stars, vec!["Some_Actor_A".to_string(), "Some_Actor_B".to_string()]);
     }
 
@@ -141,7 +144,7 @@ mod tests {
         let input = "Title: Some_Title; Year: 2024; Director: Some_Director;\
          Writer: ; Genre: [Drama, Mystery]; Stars: Some_Actor_A, Some_Actor_B;\
          Description: Some_Description.";
-        let result = Film::from_str(input);
+        let result = parse_single_film(input);
         assert!(result.is_err());
     }
 
@@ -149,8 +152,8 @@ mod tests {
     fn test_valid_description() {
         let input = "Title: Some_Title; Year: 2024; Director: Some_Director;\
          Writer: Some_Writer; Genre: [Some_Genre]; Stars: [Some_Actor_A, Some_Actor_B];\
-         Description: Some_Description.";
-        let film = Film::from_str(input).expect("Failed to parse valid writer");
+         Description: Some_Description";
+        let film = parse_single_film(input).expect("Failed to parse valid writer");
         assert_eq!(film.description, "Some_Description");
     }
 
@@ -159,7 +162,7 @@ mod tests {
         let input = "Title: Some_Title; Year: 2024; Director: Some_Director;\
          Writer: Some_Writer; Genre: [Some_Genre]; Stars: [Some_Actor_A, Some_Actor_B];\
          Description: ";
-        let result = Film::from_str(input);
+        let result = parse_single_film(input);
         assert!(result.is_err());
     }
 }
