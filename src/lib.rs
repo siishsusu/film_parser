@@ -1,11 +1,11 @@
-use std::fs::{File};
-use std::path::Path;
-use std::*;
-use std::io::{BufRead, BufReader};
 use anyhow::{anyhow, Context};
 use pest::Parser;
 use pest_derive::Parser;
+use std::fs::File;
 use std::io::Write;
+use std::io::{BufRead, BufReader};
+use std::path::Path;
+use std::*;
 
 pub fn read_lines(filename: &str) -> anyhow::Result<Vec<String>> {
     let path = Path::new(filename);
@@ -13,8 +13,8 @@ pub fn read_lines(filename: &str) -> anyhow::Result<Vec<String>> {
         return Err(anyhow!("No file found: {:?}", path));
     }
 
-    let file = File::open(filename)
-        .with_context(|| format!("Failed to open the file {}", filename))?;
+    let file =
+        File::open(filename).with_context(|| format!("Failed to open the file {}", filename))?;
     let reader = BufReader::new(file);
     let lines: Result<Vec<String>, io::Error> = reader.lines().collect();
     lines.map_err(|e| anyhow!("Failed to read the file: {}: {}", filename, e))
@@ -36,13 +36,15 @@ pub struct Film {
 }
 
 impl Film {
-    pub fn new(title: String,
-               year: u32,
-               director: String,
-               writer: String,
-               genre: Vec<String>,
-               stars: Vec<String>,
-               description: String) -> Self {
+    pub fn new(
+        title: String,
+        year: u32,
+        director: String,
+        writer: String,
+        genre: Vec<String>,
+        stars: Vec<String>,
+        description: String,
+    ) -> Self {
         Film {
             title,
             year,
@@ -55,21 +57,37 @@ impl Film {
     }
 
     fn parse_string_field(inner_pair: pest::iterators::Pair<Rule>, target_rule: Rule) -> String {
-        inner_pair.into_inner()
-            .find_map(|pair| if pair.as_rule() == target_rule { Some(pair.as_str().to_string()) } else { None })
+        inner_pair
+            .into_inner()
+            .find_map(|pair| {
+                if pair.as_rule() == target_rule {
+                    Some(pair.as_str().to_string())
+                } else {
+                    None
+                }
+            })
             .unwrap_or_default()
     }
 
     fn parse_vector_field(inner_pair: pest::iterators::Pair<Rule>, list_rule: Rule) -> Vec<String> {
-        inner_pair.into_inner()
-            .find_map(|pair| if pair.as_rule() == list_rule {
-                Some(pair.into_inner()
-                    .flat_map(|item| item.as_str().trim_matches('"').split(',')
-                        .map(|s| s.trim().to_string())
-                        .collect::<Vec<String>>())
-                    .collect::<Vec<String>>())
-            } else {
-                None
+        inner_pair
+            .into_inner()
+            .find_map(|pair| {
+                if pair.as_rule() == list_rule {
+                    Some(
+                        pair.into_inner()
+                            .flat_map(|item| {
+                                item.as_str()
+                                    .trim_matches('"')
+                                    .split(',')
+                                    .map(|s| s.trim().to_string())
+                                    .collect::<Vec<String>>()
+                            })
+                            .collect::<Vec<String>>(),
+                    )
+                } else {
+                    None
+                }
             })
             .unwrap_or_default()
     }
@@ -96,27 +114,31 @@ impl Film {
                                 title = Self::parse_string_field(inner_pair_1, Rule::title_value)
                             }
                             Rule::Year => {
-                                if let Ok(parsed_year) = inner_pair_1.clone().into_inner().as_str().parse::<u32>() {
+                                if let Ok(parsed_year) =
+                                    inner_pair_1.clone().into_inner().as_str().parse::<u32>()
+                                {
                                     year = parsed_year;
                                 } else {
                                     eprintln!("Failed to parse year: {}", inner_pair_1.as_str());
                                 }
                             }
                             Rule::Director => {
-                                director = Self::parse_string_field(inner_pair_1, Rule::director_value)
+                                director =
+                                    Self::parse_string_field(inner_pair_1, Rule::director_value)
                             }
                             Rule::Writer => {
                                 writer = Self::parse_string_field(inner_pair_1, Rule::writer_value)
                             }
                             Rule::Genre => {
                                 genre = Self::parse_vector_field(inner_pair_1, Rule::genre_list)
-                            },
+                            }
 
                             Rule::Stars => {
                                 stars = Self::parse_vector_field(inner_pair_1, Rule::stars_list)
                             }
                             Rule::Description => {
-                                description = Self::parse_string_field(inner_pair_1, Rule::description_value)
+                                description =
+                                    Self::parse_string_field(inner_pair_1, Rule::description_value)
                             }
                             _ => {
                                 println!("Unknown rule inside film: {:?}", inner_pair_1.as_rule());
@@ -130,8 +152,14 @@ impl Film {
             }
         }
 
-        if title.is_empty() || year == 0 || director.is_empty() || writer.is_empty() ||
-            genre.is_empty() || stars.is_empty() || description.is_empty() {
+        if title.is_empty()
+            || year == 0
+            || director.is_empty()
+            || writer.is_empty()
+            || genre.is_empty()
+            || stars.is_empty()
+            || description.is_empty()
+        {
             return Err(anyhow!("Some fields may be missing"));
         }
 
@@ -145,7 +173,6 @@ impl Film {
             description,
         ))
     }
-
 }
 
 pub fn parse_films(films: Vec<String>) -> anyhow::Result<Vec<Film>> {
@@ -174,8 +201,8 @@ pub fn parse_films(films: Vec<String>) -> anyhow::Result<Vec<Film>> {
 }
 
 pub fn write_films_to_file(films: Vec<Film>, filename: &str) -> anyhow::Result<()> {
-    let mut file = File::create(filename)
-        .with_context(|| format!("Failed to create file: {}", filename))?;
+    let mut file =
+        File::create(filename).with_context(|| format!("Failed to create file: {}", filename))?;
 
     for film in films {
         writeln!(

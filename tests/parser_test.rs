@@ -2,12 +2,15 @@ use film_parser::*;
 
 #[cfg(test)]
 mod tests {
-    use pest::RuleType;
     use super::*;
+    use pest::RuleType;
 
     fn parse_single_film(input: &str) -> anyhow::Result<Film> {
         let films = parse_films(vec![input.to_string()])?;
-        films.into_iter().next().ok_or_else(|| anyhow::anyhow!("No films found in input"))
+        films
+            .into_iter()
+            .next()
+            .ok_or_else(|| anyhow::anyhow!("No films found in input"))
     }
 
     #[test]
@@ -22,8 +25,18 @@ mod tests {
         assert_eq!(film.director, "Ally Pankiw");
         assert_eq!(film.writer, "Ally Pankiw");
         assert_eq!(film.genre, vec!["Comedy".to_string(), "Drama".to_string()]);
-        assert_eq!(film.stars, vec!["Rachel Sennott".to_string(), "Olga Petsa".to_string(), "Jason Jones".to_string()]);
-        assert_eq!(film.description, "A stand-up comedian struggling with PTSD.");
+        assert_eq!(
+            film.stars,
+            vec![
+                "Rachel Sennott".to_string(),
+                "Olga Petsa".to_string(),
+                "Jason Jones".to_string()
+            ]
+        );
+        assert_eq!(
+            film.description,
+            "A stand-up comedian struggling with PTSD."
+        );
     }
 
     #[test]
@@ -136,7 +149,10 @@ mod tests {
          Writer: Some_Writer; Genre: [Drama, Mystery]; Stars: [Some_Actor_A, Some_Actor_B];\
          Description: Some_Description.";
         let film = parse_single_film(input).expect("Failed to parse valid stars");
-        assert_eq!(film.stars, vec!["Some_Actor_A".to_string(), "Some_Actor_B".to_string()]);
+        assert_eq!(
+            film.stars,
+            vec!["Some_Actor_A".to_string(), "Some_Actor_B".to_string()]
+        );
     }
 
     #[test]
