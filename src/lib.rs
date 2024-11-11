@@ -71,7 +71,7 @@ impl Film {
                                             None
                                         }
                                     })
-                                    .unwrap_or_else(|| String::new());
+                                    .unwrap_or_else(String::new);
                             }
                             Rule::Year => {
                                 let year_str = inner_pair_1.into_inner().as_str();
@@ -94,7 +94,7 @@ impl Film {
                                             None
                                         }
                                     })
-                                    .unwrap_or_else(|| String::new());
+                                    .unwrap_or_else(String::new);
                             }
                             Rule::Writer => {
                                 writer = inner_pair_1.into_inner()
@@ -105,7 +105,7 @@ impl Film {
                                             None
                                         }
                                     })
-                                    .unwrap_or_else(|| String::new());
+                                    .unwrap_or_else(String::new);
                             }
                             Rule::Genre => {
                                 genre = inner_pair_1.into_inner()
@@ -119,7 +119,7 @@ impl Film {
                                             None
                                         }
                                     })
-                                    .unwrap_or_else(|| Vec::new());
+                                    .unwrap_or_else(Vec::new);
                             },
 
                             Rule::Stars => {
@@ -134,7 +134,7 @@ impl Film {
                                             None
                                         }
                                     })
-                                    .unwrap_or_else(|| Vec::new());
+                                    .unwrap_or_else(Vec::new);
                             }
                             Rule::Description => {
                                 description = inner_pair_1.into_inner()
@@ -145,7 +145,7 @@ impl Film {
                                             None
                                         }
                                     })
-                                    .unwrap_or_else(|| String::new());
+                                    .unwrap_or_else(String::new);
                             }
                             _ => {
                                 println!("Unknown rule inside film: {:?}", inner_pair_1.as_rule());
