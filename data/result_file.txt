@@ -2,9 +2,11 @@ Title: Some_Title
 Year: 2024
 Director: Some_Director
 Writer: Some_Writer
-Genre: Drama, Mystery
-StaSome_Actor_A, Some_Actor_B
+Genre: Some_Genre
+Stars: Some_Actor_A, Some_Actor_B
 Description: Some_Description.
 
 n.
+
+ stand-up comedian struggling with PTSD.
 

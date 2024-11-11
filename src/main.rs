@@ -1,3 +1,4 @@
+use std::process::Command;
 use film_parser::*;
 use colored::*;
 
@@ -15,6 +16,18 @@ fn main() -> anyhow::Result<()> {
         }
         "credits" => {
             show_credits()
+        }
+        "test" => {
+            let output = Command::new("cargo")
+                .arg("test")
+                .output()
+                .expect("Failed to execute command");
+
+            if !output.status.success() {
+                eprintln!("Tests failed: {}", String::from_utf8_lossy(&output.stderr).red().bold());
+            } else {
+                println!("Tests passed successfully:\n{}", String::from_utf8_lossy(&output.stdout).green().bold());
+            }
         }
         "parse" => {
             if args.len() <= 2 {
@@ -45,10 +58,12 @@ fn show_help(){
     println!("{}  - Parse the specified file and display its content.", "\tparse <filename>".italic());
     println!("{}              - Show this help information.", "\thelp".italic());
     println!("{}           - Show credits information.", "\tcredits".italic());
+    println!("{}              - Run tests.", "\ttest".italic());
     println!("{}", "\nExample usage:".green().bold());
     println!("{}", "\tcargo run -- parse data/film_info.txt".italic());
     println!("{}", "\tcargo run -- help".italic());
     println!("{}", "\tcargo run -- credits".italic());
+    println!("{}", "\tcargo run -- test".italic());
 }
 
 fn show_credits() {
