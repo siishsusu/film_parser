@@ -193,5 +193,29 @@ pub fn parse_films(films: Vec<String>) -> anyhow::Result<Vec<Film>> {
         }
     }
 
+    write_films_to_file(films_res.clone(), "data/result_file.txt")?;
+
     Ok(films_res)
+}
+
+pub fn write_films_to_file(films: Vec<Film>, filename: &str) -> anyhow::Result<()> {
+    let mut file = File::create(filename)
+        .with_context(|| format!("Failed to create file: {}", filename))?;
+
+    for film in films {
+        writeln!(
+            file,
+            "Title: {}\nYear: {}\nDirector: {}\nWriter: {}\nGenre: {}\nStars: {}\nDescription: {}\n",
+            film.title,
+            film.year,
+            film.director,
+            film.writer,
+            film.genre.join(", "),
+            film.stars.join(", "),
+            film.description
+        )
+            .with_context(|| format!("Failed to write to file: {}", filename))?;
+    }
+
+    Ok(())
 }
