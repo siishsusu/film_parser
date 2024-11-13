@@ -3,6 +3,9 @@
 ## Project Name
 **film_parser**: A Rust application to parse film information from formatted strings into structured data.
 
+## Link to crate
+https://crates.io/crates/film_parser
+
 ## Overview
 This project implements a Rust application that parses a string containing film information into a structured format defined by the `Film` struct. The goal is to facilitate the extraction and manipulation of film data, making it easier to work with various film-related tasks.
 
