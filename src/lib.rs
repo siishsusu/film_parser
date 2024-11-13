@@ -196,6 +196,7 @@ pub fn parse_films(films: Vec<String>) -> anyhow::Result<Vec<Film>> {
     }
 
     write_films_to_file(films_res.clone(), "data/result_file.txt")?;
+    write_films_to_file_as_structure_without_formating(films_res.clone(), "data/result_wo_formating_file.txt")?;
 
     Ok(films_res)
 }
@@ -215,6 +216,21 @@ pub fn write_films_to_file(films: Vec<Film>, filename: &str) -> anyhow::Result<(
             film.genre.join(", "),
             film.stars.join(", "),
             film.description
+        )
+            .with_context(|| format!("Failed to write to file: {}", filename))?;
+    }
+
+    Ok(())
+}
+
+pub fn write_films_to_file_as_structure_without_formating(films: Vec<Film>, filename: &str) -> anyhow::Result<()> {
+    let mut file =
+        File::create(filename).with_context(|| format!("Failed to create file: {}", filename))?;
+
+    for film in films {
+        writeln!(
+            file,
+            "{:?}", film
         )
             .with_context(|| format!("Failed to write to file: {}", filename))?;
     }
