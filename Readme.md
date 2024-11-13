@@ -3,7 +3,7 @@
 ## Project Name
 **film_parser**: A Rust application to parse film information from formatted strings into structured data.
 
-## Link to crate
+## Link to crates.io
 https://crates.io/crates/film_parser
 
 ## Link to docs.rs
