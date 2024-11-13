@@ -2,6 +2,7 @@
 name = "film_parser"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
 description = "A Rust application for parsing film information from a string into a structured Film struct."
 
 [dependencies]
