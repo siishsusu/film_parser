@@ -1,9 +1,8 @@
-//! # Film Grammar
+//! # Film Grammar Rules
 //! This grammar defines the structure of a film entry, parsing information like title, year, director, writer, genre, stars, and description.
 file = { film* }
 
 /// Represents a single film record containing data such as title, year, director, writer, genre, actors, and description.
-/// The format is `Title: <title>; Year: <year>; Director: <director>; Screenwriter: <screenwriter>; Genre: [<genre1>, <genre2>, ...]; Stars: [<star1>, <star2>, ...]; Description: <description>;``.
 film = { Title ~ ";" ~ (" ")* ~ Year ~ ";" ~ (" ")* ~ Director ~ ";" ~ (" ")* ~ Writer ~ ";" ~ (" ")* ~ Genre ~ ";" ~ (" ")* ~ Stars ~ ";" ~ (" ")* ~ Description ~ (";")* }
 
 /// Matches the title field of the film record.
