@@ -6,18 +6,50 @@ use std::io::Write;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 use std::*;
+use thiserror::Error;
+use crate::FilmParserError::FileReadingError;
 
-pub fn read_lines(filename: &str) -> anyhow::Result<Vec<String>> {
+#[derive(Error, Debug)]
+pub enum FilmParserError {
+    #[error("Specified file was not found: {0}")]
+    NoFileFound(String),
+
+    #[error("Failed to read the file: {0}")]
+    FileReadingError(String),
+
+    #[error("Failed to open the file {0}")]
+    FileOpeningError(String),
+
+    #[error("Failed to create the file {0}")]
+    FileCreatingError(String),
+
+    #[error("Failed to write to the file {0}")]
+    FileWritingError(String),
+
+    #[error("Failed to parse the file content: {0}")]
+    ParsingError(String),
+
+    #[error("Failed to parse the rule {0} content: {1}")]
+    RuleParsingError(String, String),
+
+    #[error("Missing required film fields")]
+    MissingFieldsError,
+
+    #[error("Unknown rule {0}")]
+    UnknownRule(String),
+}
+
+pub fn read_lines(filename: &str) -> Result<Vec<String>, FilmParserError> {
     let path = Path::new(filename);
     if !path.exists() {
-        return Err(anyhow!("No file found: {:?}", path));
+        return Err(FilmParserError::NoFileFound(filename.to_string()));
     }
 
-    let file =
-        File::open(filename).with_context(|| format!("Failed to open the file {}", filename))?;
+    let file = File::open(filename)
+            .map_err(|_| FilmParserError::FileOpeningError(filename.to_string()))?;
     let reader = BufReader::new(file);
     let lines: Result<Vec<String>, io::Error> = reader.lines().collect();
-    lines.map_err(|e| anyhow!("Failed to read the file: {}: {}", filename, e))
+    lines.map_err(|e| FileReadingError(filename.to_string()))
 }
 
 #[derive(Parser)]
@@ -92,9 +124,9 @@ impl Film {
             .unwrap_or_default()
     }
 
-    pub fn parse_to_struct(pair: pest::iterators::Pair<Rule>) -> anyhow::Result<Self> {
+    pub fn parse_to_struct(pair: pest::iterators::Pair<Rule>) -> Result<Self, FilmParserError> {
         if pair.as_str().trim().is_empty() {
-            return Err(anyhow!("Unexpected empty input provided"));
+            return Err(FilmParserError::ParsingError("Empty input was provided".to_string()));
         }
 
         let mut title = String::new();
@@ -119,7 +151,7 @@ impl Film {
                                 {
                                     year = parsed_year;
                                 } else {
-                                    eprintln!("Failed to parse year: {}", inner_pair_1.as_str());
+                                    return Err(FilmParserError::RuleParsingError("year".to_string(), inner_pair_1.as_rule()));
                                 }
                             }
                             Rule::Director => {
@@ -141,13 +173,13 @@ impl Film {
                                     Self::parse_string_field(inner_pair_1, Rule::description_value)
                             }
                             _ => {
-                                println!("Unknown rule inside film: {:?}", inner_pair_1.as_rule());
+                                return Err(FilmParserError::UnknownRule(inner_pair_1.as_rule()));
                             }
                         }
                     }
                 }
                 _ => {
-                    println!("Unknown rule: {:?}", inner_pair.as_rule());
+                    return Err(FilmParserError::UnknownRule(inner_pair.as_rule()));
                 }
             }
         }
@@ -160,7 +192,7 @@ impl Film {
             || stars.is_empty()
             || description.is_empty()
         {
-            return Err(anyhow!("Some fields may be missing"));
+            return Err(FilmParserError::MissingFieldsError);
         }
 
         Ok(Self::new(
@@ -175,22 +207,18 @@ impl Film {
     }
 }
 
-pub fn parse_films(films: Vec<String>) -> anyhow::Result<Vec<Film>> {
+pub fn parse_films(films: Vec<String>) -> Result<Vec<Film>, FilmParserError> {
     let mut films_res = Vec::new();
 
     for film in films {
-        let pairs = match FilmParser::parse(Rule::file, &film) {
-            Ok(pairs) => pairs,
-            Err(err) => {
-                eprintln!("Failed to parse line: {} with error: {}", film, err);
-                continue;
-            }
-        };
+        let pairs = FilmParser::parse(Rule::file, &film)
+            .map_err(|_| FilmParserError::ParsingError(film.clone()))?;
 
         for pair in pairs {
             match Film::parse_to_struct(pair) {
                 Ok(parsed_film) => films_res.push(parsed_film),
-                Err(err) => eprintln!("Error parsing film: {} - {}", film, err),
+                Err(err) =>
+                    return Err(FilmParserError::ParsingError(format!("{} - {:?}", film, err))),
             }
         }
     }
@@ -201,9 +229,11 @@ pub fn parse_films(films: Vec<String>) -> anyhow::Result<Vec<Film>> {
     Ok(films_res)
 }
 
-pub fn write_films_to_file(films: Vec<Film>, filename: &str) -> anyhow::Result<()> {
+pub fn write_films_to_file(films: Vec<Film>, filename: &str) -> Result<(), FilmParserError> {
     let mut file =
-        File::create(filename).with_context(|| format!("Failed to create file: {}", filename))?;
+        File::create(filename).with_context(
+            || FilmParserError::FileCreatingError(filename.to_string())
+        )?;
 
     for film in films {
         writeln!(
@@ -217,22 +247,22 @@ pub fn write_films_to_file(films: Vec<Film>, filename: &str) -> anyhow::Result<(
             film.stars.join(", "),
             film.description
         )
-            .with_context(|| format!("Failed to write to file: {}", filename))?;
+            .with_context(|| FilmParserError::FileWritingError(filename.to_string()))?;
     }
 
     Ok(())
 }
 
-pub fn write_films_to_file_as_structure_without_formating(films: Vec<Film>, filename: &str) -> anyhow::Result<()> {
+pub fn write_films_to_file_as_structure_without_formating(films: Vec<Film>, filename: &str) -> Result<(), FilmParserError> {
     let mut file =
-        File::create(filename).with_context(|| format!("Failed to create file: {}", filename))?;
+        File::create(filename).with_context(|| FilmParserError::FileCreatingError(filename.to_string()))?;
 
     for film in films {
         writeln!(
             file,
             "{:?}", film
         )
-            .with_context(|| format!("Failed to write to file: {}", filename))?;
+            .with_context(|| FilmParserError::FileWritingError(filename.to_string()))?;
     }
 
     Ok(())
