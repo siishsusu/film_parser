@@ -12,7 +12,6 @@ use std::path::Path;
 use std::*;
 use thiserror::Error;
 
-
 /// Enum representing possible errors that can occur while using the film parser.
 #[derive(Error, Debug)]
 pub enum FilmParserError {
